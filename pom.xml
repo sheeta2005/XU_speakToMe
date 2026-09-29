@@ -12,7 +12,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.xiyou</groupId>
+    <groupId>com.me</groupId>
     <artifactId>speak-to-me</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -45,32 +45,32 @@
         <dependencies>
             <!-- 内部模块版本统一 -->
             <dependency>
-                <groupId>com.xiyou</groupId>
+                <groupId>com.me</groupId>
                 <artifactId>speakToMe-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.xiyou</groupId>
+                <groupId>com.me</groupId>
                 <artifactId>speakToMe-framework</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.xiyou</groupId>
+                <groupId>com.me</groupId>
                 <artifactId>speakToMe-user</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.xiyou</groupId>
+                <groupId>com.me</groupId>
                 <artifactId>speakToMe-content</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.xiyou</groupId>
+                <groupId>com.me</groupId>
                 <artifactId>speakToMe-canteen</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.xiyou</groupId>
+                <groupId>com.me</groupId>
                 <artifactId>speakToMe-admin</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -78,7 +78,7 @@
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-                <version>${mybatis-plus.version}</version>
+                <version> 3.5.5</version>
             </dependency>
             <dependency>
                 <groupId>cn.hutool</groupId>
