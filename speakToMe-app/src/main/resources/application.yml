@@ -1,0 +1,79 @@
+# =========================================================
+# 西邮点评家 后端配置骨架（环境变量占位，密钥不入库不入文件）
+# 部署时请通过环境变量注入，避免明文提交到代码仓库
+# =========================================================
+server:
+  port: 8080
+
+spring:
+  application:
+    name: speak-to-me
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 建库语句见 sql/schema.sql，库名 speak_to_me，字符集 utf8mb4
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/speak_to_me?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 8
+          min-idle: 2
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+
+# MyBatis-Plus
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 生产环境改为 Slf4jImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: isDeleted   # 全局逻辑删除字段（review/post 等表）
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 微信小程序
+wx:
+  miniapp:
+    appid: ${WX_APPID:}
+    secret: ${WX_SECRET:}
+    # code2session 与 msgSecCheck 网关，一般无需修改
+    session-url: https://api.weixin.qq.com/sns/jscode2session
+    msg-sec-check-url: https://api.weixin.qq.com/wxa/msg_sec_check
+
+# 敏感信息加密（openid/手机号 AES-256-GCM，32 字节 Base64；生产环境经 KMS/环境变量注入）
+security:
+  aes:
+    key: ${AES_KEY:}
+
+# 登录态会话（Redis）
+session:
+  ttl-days: 7
+
+# 业务参数（限流阈值等，可按运营调整）
+business:
+  comment:
+    user-limit: 5        # 单用户每分钟最多评论数
+    ip-limit: 20         # 单 IP 每分钟评论数
+    content-min: 10      # 评论最少字数
+    content-max: 200     # 评论最多字数
+
+logging:
+  level:
+    com.xiyou.speakToMe: info

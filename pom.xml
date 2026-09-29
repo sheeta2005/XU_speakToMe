@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 西邮点评家 后端聚合工程：Java 21 + Spring Boot 3.2 + MyBatis-Plus + MySQL 8 + Redis 7 -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.12</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.xiyou</groupId>
+    <artifactId>speak-to-me</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>speak-to-me</name>
+    <description>西邮点评家 - 校园美食点评微信小程序后端</description>
+
+    <!-- 模块依赖方向（严格单向，避免循环依赖）：
+         app -> admin -> canteen/user/content -> framework -> common
+         预留扩展：二期 trade / 三期 anonymous 等新模块只依赖 framework+common 即可接入 -->
+    <modules>
+        <module>speakToMe-common</module>
+        <module>speakToMe-framework</module>
+        <module>speakToMe-user</module>
+        <module>speakToMe-content</module>
+        <module>speakToMe-canteen</module>
+        <module>speakToMe-admin</module>
+        <module>speakToMe-app</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <mybatis-plus.version>3.5.7</mybatis-plus.version>
+        <hutool.version>5.8.32</hutool.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- 内部模块版本统一 -->
+            <dependency>
+                <groupId>com.xiyou</groupId>
+                <artifactId>speakToMe-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xiyou</groupId>
+                <artifactId>speakToMe-framework</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xiyou</groupId>
+                <artifactId>speakToMe-user</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xiyou</groupId>
+                <artifactId>speakToMe-content</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xiyou</groupId>
+                <artifactId>speakToMe-canteen</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xiyou</groupId>
+                <artifactId>speakToMe-admin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- 第三方版本统一 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- 全工程统一使用 Lombok，编译期生效 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>
