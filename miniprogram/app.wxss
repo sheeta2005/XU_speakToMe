@@ -1,0 +1,144 @@
+/**
+ * app.wxss - 全局主题变量与通用基类
+ *
+ * 主题规范（三态，按优先级从低到高）：
+ *   1. page 默认变量            -> 日间模式：青蓝色系
+ *   2. @media (prefers-color-scheme: dark)
+ *                              -> 跟随系统自动切换：夜间暗金色系
+ *   3. .page-root[data-theme]   -> 手动切换（设置页按钮写入，覆盖系统判定）
+ *
+ * 使用方式：所有页面根节点使用 <view class="page-root" data-theme="{{theme}}">，
+ * 业务样式一律引用 var(--xxx)，禁止写死色值。
+ */
+
+/* ============ 日间模式（默认）：青蓝色 ============ */
+page {
+  --color-primary: #00B4D8;          /* 主色：青蓝 */
+  --color-primary-light: #48CAE4;    /* 辅助色：浅青蓝 */
+  --color-primary-dark: #0096C7;     /* 辅助色：深青蓝 */
+  --color-accent: #FFB703;           /* 点缀强调色：暖金 */
+  --color-star: #FFB703;             /* 评分星色 */
+  --color-success: #2E86AB;          /* 成功 */
+  --color-warning: #E6A23C;          /* 警告 */
+  --color-danger: #D64550;           /* 危险/删除 */
+
+  --color-bg: #F5F8FA;               /* 页面背景 */
+  --color-card: #FFFFFF;             /* 卡片背景 */
+  --color-text: #1A2B4A;             /* 主文字 */
+  --color-text-secondary: #5A6B80;   /* 次文字 */
+  --color-text-placeholder: #9AA8B8; /* 占位文字 */
+  --color-border: #DCE4EC;           /* 边框/分割线 */
+  --color-mask: rgba(26, 43, 74, 0.5);
+
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-size: 28rpx;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+}
+
+/* ============ 夜间模式（跟随系统）：烟花散落的暗金 ============ */
+@media (prefers-color-scheme: dark) {
+  page {
+    --color-primary: #C9A227;          /* 主色：暗金 */
+    --color-primary-light: #E6C24A;    /* 强调色：亮金 */
+    --color-primary-dark: #A8861E;     /* 深金 */
+    --color-accent: #E6C24A;
+    --color-star: #E6C24A;
+    --color-success: #7FB5B5;
+    --color-warning: #D9A441;
+    --color-danger: #D9706E;
+
+    --color-bg: #121212;               /* 背景主色 */
+    --color-card: #1E1C18;             /* 卡片背景 */
+    --color-text: #F5EFE0;             /* 文字主色 */
+    --color-text-secondary: #A89B7A;   /* 文字次色 */
+    --color-text-placeholder: #6E6550;
+    --color-border: #3A3226;           /* 边框/分割线 */
+    --color-mask: rgba(0, 0, 0, 0.6);
+
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+}
+
+/* ============ 手动切换（优先级最高，覆盖系统判定） ============ */
+.page-root[data-theme="light"] {
+  --color-primary: #00B4D8;
+  --color-primary-light: #48CAE4;
+  --color-primary-dark: #0096C7;
+  --color-accent: #FFB703;
+  --color-star: #FFB703;
+  --color-success: #2E86AB;
+  --color-warning: #E6A23C;
+  --color-danger: #D64550;
+
+  --color-bg: #F5F8FA;
+  --color-card: #FFFFFF;
+  --color-text: #1A2B4A;
+  --color-text-secondary: #5A6B80;
+  --color-text-placeholder: #9AA8B8;
+  --color-border: #DCE4EC;
+  --color-mask: rgba(26, 43, 74, 0.5);
+}
+
+.page-root[data-theme="dark"] {
+  --color-primary: #C9A227;
+  --color-primary-light: #E6C24A;
+  --color-primary-dark: #A8861E;
+  --color-accent: #E6C24A;
+  --color-star: #E6C24A;
+  --color-success: #7FB5B5;
+  --color-warning: #D9A441;
+  --color-danger: #D9706E;
+
+  --color-bg: #121212;
+  --color-card: #1E1C18;
+  --color-text: #F5EFE0;
+  --color-text-secondary: #A89B7A;
+  --color-text-placeholder: #6E6550;
+  --color-border: #3A3226;
+  --color-mask: rgba(0, 0, 0, 0.6);
+}
+
+/* ============ 通用基类 ============ */
+.page-root {
+  min-height: 100vh;
+  box-sizing: border-box;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.card {
+  background-color: var(--color-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  text-align: center;
+  padding: 20rpx 0;
+}
+
+.btn-primary:active {
+  opacity: 0.85;
+}
+
+.divider {
+  height: 1rpx;
+  background-color: var(--color-border);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

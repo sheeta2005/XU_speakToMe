@@ -1,0 +1,45 @@
+{
+  "pages": [
+    "pages/auth/login",
+    "pages/auth/campus",
+    "pages/site/index",
+    "pages/site/dishes",
+    "pages/dish/detail",
+    "pages/review/write",
+    "pages/rank/index",
+    "pages/mine/index",
+    "pages/mine/my-reviews"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "@navBg",
+    "navigationBarTextStyle": "@navFg",
+    "navigationBarTitleText": "西邮点评家",
+    "backgroundColor": "@bg",
+    "backgroundTextStyle": "@bgText"
+  },
+  "darkmode": true,
+  "themeLocation": "theme.json",
+  "tabBar": {
+    "color": "#5A6B80",
+    "selectedColor": "#00B4D8",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/site/index",
+        "text": "美食"
+      },
+      {
+        "pagePath": "pages/rank/index",
+        "text": "榜单"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

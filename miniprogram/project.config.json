@@ -1,0 +1,16 @@
+{
+  "description": "西邮点评家 - 校园美食点评微信小程序（原生 + Vant Weapp）",
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "projectname": "XU_speakToMe",
+  "miniprogramRoot": "./",
+  "setting": {
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "enhance": true,
+    "useCompilerPlugins": ["typescript"],
+    "urlCheck": true
+  },
+  "condition": {}
+}
