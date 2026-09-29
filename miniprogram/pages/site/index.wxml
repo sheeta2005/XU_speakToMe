@@ -1,0 +1,36 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-header">
+    <view class="page-title">去哪吃</view>
+    <view class="page-sub text-secondary">校内食堂与校外区域，等你点评</view>
+  </view>
+
+  <view class="site-list">
+    <view
+      wx:for="{{sites}}"
+      wx:key="id"
+      class="site-item card"
+      data-id="{{item.id}}"
+      data-name="{{item.name}}"
+      bindtap="goStalls"
+    >
+      <view class="site-main">
+        <view class="site-name">
+          {{item.name}}
+          <text class="site-tag {{item.siteType === 2 ? 'tag-outer' : 'tag-inner'}}">
+            {{item.siteType === 2 ? '校外' : '校内'}}
+          </text>
+        </view>
+        <view class="site-meta text-secondary">{{item.location || '位置待补充'}}</view>
+      </view>
+      <view class="site-side">
+        <view class="site-rating" wx:if="{{item.ratingCount > 0}}">
+          {{item.avgRating || '0.0'}}
+        </view>
+        <view class="site-count text-secondary" wx:if="{{item.ratingCount > 0}}">{{item.ratingCount}}条点评</view>
+        <view class="site-arrow text-secondary">›</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="list-empty text-secondary" wx:if="{{!loading && sites.length === 0}}">该校区暂无地点</view>
+</view>

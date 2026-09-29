@@ -1,0 +1,16 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="login-hero">
+    <view class="login-logo">西邮点评家</view>
+    <view class="login-slogan text-secondary">校园美食 · 真实点评 · 双校区覆盖</view>
+  </view>
+
+  <view class="login-card card">
+    <view class="login-tip">使用微信授权登录，发现大家最爱的食堂味道</view>
+    <button class="btn-primary login-btn" bindtap="onLogin" loading="{{loading}}">
+      {{loading ? '登录中...' : '微信一键登录'}}
+    </button>
+    <view class="login-agreement text-secondary">
+      登录即代表同意平台规则：点评内容需真实、文明，禁止违规信息
+    </view>
+  </view>
+</view>

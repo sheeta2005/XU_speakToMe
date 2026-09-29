@@ -1,0 +1,36 @@
+<view class="page-root" data-theme="{{theme}}">
+  <block wx:for="{{groups}}" wx:key="stall.id" wx:for-item="group">
+    <view class="stall-block">
+      <view class="stall-head">
+        <view class="stall-name">{{group.stall.name}}</view>
+        <view class="stall-meta text-secondary">{{group.stall.floor || '—'}} · {{group.stall.category || '综合'}}</view>
+      </view>
+
+      <view class="dish-list">
+        <view
+          wx:for="{{group.dishes}}"
+          wx:key="id"
+          class="dish-item card"
+          data-id="{{item.id}}"
+          bindtap="goDetail"
+        >
+          <view class="dish-main">
+            <view class="dish-name">{{item.name}}</view>
+            <view class="dish-desc text-secondary" wx:if="{{item.description}}">{{item.description}}</view>
+          </view>
+          <view class="dish-side">
+            <view class="dish-price" wx:if="{{item.price !== null && item.price !== undefined}}">￥{{item.price}}</view>
+            <view class="dish-rating" wx:if="{{item.ratingCount > 0}}">
+              <text class="star">★</text> {{item.avgRating}}
+            </view>
+            <view class="dish-none text-secondary" wx:else>暂无点评</view>
+          </view>
+        </view>
+
+        <view class="dish-empty text-secondary" wx:if="{{group.dishes.length === 0}}">该档口暂无在售菜品</view>
+      </view>
+    </view>
+  </block>
+
+  <view class="list-empty text-secondary" wx:if="{{!loading && groups.length === 0}}">该地点暂未收录档口</view>
+</view>

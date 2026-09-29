@@ -1,0 +1,227 @@
+.page-root {
+  padding: 32rpx 32rpx 48rpx;
+}
+
+/* 菜品信息 */
+.dish-head {
+  padding: 36rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.dish-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dish-name {
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.dish-price {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.dish-desc {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+}
+
+.dish-score-row {
+  display: flex;
+  align-items: center;
+  margin-top: 28rpx;
+}
+
+.score-big {
+  font-size: 64rpx;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-right: 24rpx;
+}
+
+.score-meta .stars {
+  font-size: 30rpx;
+}
+
+.score-meta .text-secondary {
+  font-size: 24rpx;
+  margin-top: 6rpx;
+}
+
+.dist-list {
+  margin-top: 24rpx;
+}
+
+.dist-row {
+  display: flex;
+  align-items: center;
+  margin-top: 10rpx;
+}
+
+.dist-label {
+  width: 64rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}
+
+.dist-bar {
+  flex: 1;
+  height: 12rpx;
+  border-radius: 6rpx;
+  background: var(--color-primary-soft);
+  overflow: hidden;
+  margin: 0 16rpx;
+}
+
+.dist-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 6rpx;
+}
+
+.dist-count {
+  width: 48rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+/* 写点评 */
+.write-entry {
+  padding: 28rpx 32rpx;
+  font-size: 28rpx;
+  color: var(--color-primary);
+  margin-bottom: 24rpx;
+  text-align: center;
+}
+
+.write-panel {
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.rate-row {
+  margin-bottom: 20rpx;
+}
+
+.rate-star {
+  font-size: 52rpx;
+  margin-right: 16rpx;
+}
+
+.write-input {
+  width: 100%;
+  min-height: 160rpx;
+  box-sizing: border-box;
+  padding: 20rpx;
+  font-size: 28rpx;
+  background: var(--color-card);
+  border: 2rpx solid var(--color-border);
+  border-radius: 12rpx;
+  color: var(--color-text-primary);
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 24rpx;
+  border: none;
+}
+
+.write-count {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  text-align: right;
+}
+
+/* 评论列表 */
+.review-section {
+  margin-top: 8rpx;
+}
+
+.review-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-bottom: 20rpx;
+}
+
+.review-item {
+  padding: 28rpx 32rpx;
+  margin-bottom: 20rpx;
+}
+
+.review-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-user {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  text-align: center;
+  line-height: 56rpx;
+  font-size: 26rpx;
+  color: var(--color-primary);
+}
+
+.review-nick {
+  margin-left: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.review-stars .star {
+  font-size: 24rpx;
+  margin-left: 2rpx;
+}
+
+.review-content {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  line-height: 1.7;
+}
+
+.review-foot {
+  display: flex;
+  align-items: center;
+  margin-top: 16rpx;
+}
+
+.review-time {
+  font-size: 22rpx;
+  flex: 1;
+}
+
+.review-audit {
+  font-size: 22rpx;
+  margin-right: 16rpx;
+}
+
+.review-del {
+  font-size: 24rpx;
+  color: var(--color-danger);
+  padding: 4rpx 12rpx;
+}
+
+.list-empty {
+  text-align: center;
+  padding: 80rpx 0;
+  font-size: 28rpx;
+}
+
+.load-more {
+  text-align: center;
+  padding: 24rpx 0;
+  font-size: 24rpx;
+}

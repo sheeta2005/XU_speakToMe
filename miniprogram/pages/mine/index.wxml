@@ -1,0 +1,10 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-header">
+    <view class="page-title">我的</view>
+    <view class="page-sub text-secondary">账号与设置</view>
+  </view>
+  <view class="empty-card card">
+    <view class="empty-title">个人中心开发中</view>
+    <view class="text-secondary empty-desc">我的点评 · 校区修改 · 主题切换将在此展示</view>
+  </view>
+</view>

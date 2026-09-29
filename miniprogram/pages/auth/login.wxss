@@ -1,0 +1,46 @@
+.page-root {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 48rpx;
+}
+
+.login-hero {
+  margin-bottom: 64rpx;
+}
+
+.login-logo {
+  font-size: 64rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-align: center;
+  letter-spacing: 4rpx;
+}
+
+.login-slogan {
+  margin-top: 16rpx;
+  text-align: center;
+  font-size: 26rpx;
+}
+
+.login-card {
+  padding: 48rpx 40rpx;
+}
+
+.login-tip {
+  font-size: 28rpx;
+  margin-bottom: 40rpx;
+  text-align: center;
+}
+
+.login-btn {
+  width: 100%;
+  border: none;
+}
+
+.login-agreement {
+  margin-top: 32rpx;
+  font-size: 22rpx;
+  text-align: center;
+  line-height: 1.6;
+}

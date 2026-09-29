@@ -1,0 +1,10 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-header">
+    <view class="page-title">美食榜</view>
+    <view class="page-sub text-secondary">近期最火菜品 · 每 10 分钟更新</view>
+  </view>
+  <view class="empty-card card">
+    <view class="empty-title">榜单开发中</view>
+    <view class="text-secondary empty-desc">即将接入 GET /api/v1/rankings/hot-dishes</view>
+  </view>
+</view>

@@ -1,0 +1,21 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-header">
+    <view class="page-title">选择你的校区</view>
+    <view class="page-sub text-secondary">首次登录必选，后续可在个人中心修改</view>
+  </view>
+
+  <view class="campus-list">
+    <view
+      wx:for="{{campuses}}"
+      wx:key="id"
+      class="campus-item card {{selected === item.id ? 'campus-item-active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="select"
+    >
+      <view class="campus-name">{{item.name}}</view>
+      <view class="campus-check" wx:if="{{selected === item.id}}">✓</view>
+    </view>
+  </view>
+
+  <view class="campus-empty text-secondary" wx:if="{{campuses.length === 0}}">暂无可用校区，请稍后再试</view>
+</view>

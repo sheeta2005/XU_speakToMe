@@ -1,0 +1,10 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-header">
+    <view class="page-title">写点评</view>
+    <view class="page-sub text-secondary">真实评价，拒绝刷分</view>
+  </view>
+  <view class="empty-card card">
+    <view class="empty-title">独立写点评页骨架</view>
+    <view class="text-secondary empty-desc">当前入口在菜品详情页内完成提交，本页预留给分享/快捷入口</view>
+  </view>
+</view>

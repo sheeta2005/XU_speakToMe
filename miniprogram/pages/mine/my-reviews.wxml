@@ -1,0 +1,10 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-header">
+    <view class="page-title">我的点评</view>
+    <view class="page-sub text-secondary">管理我发布的全部点评</view>
+  </view>
+  <view class="empty-card card">
+    <view class="empty-title">我的点评列表开发中</view>
+    <view class="text-secondary empty-desc">将接入用户点评查询与删除管理</view>
+  </view>
+</view>

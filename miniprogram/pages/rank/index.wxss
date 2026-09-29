@@ -1,0 +1,32 @@
+.page-root {
+  padding: 32rpx 32rpx 48rpx;
+}
+
+.page-header {
+  margin-bottom: 32rpx;
+}
+
+.page-title {
+  font-size: 44rpx;
+  font-weight: 700;
+}
+
+.page-sub {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+}
+
+.empty-card {
+  padding: 100rpx 40rpx;
+  text-align: center;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.empty-desc {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+}
