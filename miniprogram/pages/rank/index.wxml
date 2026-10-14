@@ -1,10 +1,39 @@
 <view class="page-root" data-theme="{{theme}}">
   <view class="page-header">
     <view class="page-title">美食榜</view>
-    <view class="page-sub text-secondary">近期最火菜品 · 每 10 分钟更新</view>
+    <view class="page-sub text-secondary">近 {{days}} 天最受欢迎的菜品</view>
   </view>
-  <view class="empty-card card">
-    <view class="empty-title">榜单开发中</view>
-    <view class="text-secondary empty-desc">即将接入 GET /api/v1/rankings/hot-dishes</view>
+
+  <view class="period-switch card">
+    <view class="period-option {{days === 7 ? 'active' : ''}} {{loading ? 'disabled' : ''}}" data-days="7" bindtap="changeDays">近 7 天</view>
+    <view class="period-option {{days === 30 ? 'active' : ''}} {{loading ? 'disabled' : ''}}" data-days="30" bindtap="changeDays">近 30 天</view>
+  </view>
+
+  <view class="state-message text-secondary" wx:if="{{loading}}">榜单加载中…</view>
+  <view class="state-card card" wx:elif="{{error}}">
+    <view class="state-message">{{error}}</view>
+    <view class="retry-action" bindtap="loadRankings">重新加载</view>
+  </view>
+  <view class="state-message text-secondary" wx:elif="{{rankings.length === 0}}">这个时间段还没有菜品上榜</view>
+
+  <view class="rank-list" wx:else>
+    <view
+      wx:for="{{rankings}}"
+      wx:key="dishId"
+      class="rank-item card"
+      data-id="{{item.dishId}}"
+      bindtap="goDetail"
+    >
+      <view class="rank-number {{item.rank <= 3 ? 'rank-top' : ''}}">{{item.rank}}</view>
+      <view class="rank-main">
+        <view class="dish-name">{{item.dishName}}</view>
+        <view class="dish-location text-secondary">{{item.siteName}} · {{item.stallName}}</view>
+        <view class="dish-meta text-secondary">{{item.recentReviewCount}} 条近期点评 · 热度 {{item.hotScore}}</view>
+      </view>
+      <view class="rank-rating">
+        <view class="rating-value">{{item.avgRating || '0.0'}}</view>
+        <view class="rating-label text-secondary">平均分</view>
+      </view>
+    </view>
   </view>
 </view>
