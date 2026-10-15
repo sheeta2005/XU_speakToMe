@@ -3,8 +3,25 @@
     <view class="page-title">我的点评</view>
     <view class="page-sub text-secondary">管理我发布的全部点评</view>
   </view>
-  <view class="empty-card card">
-    <view class="empty-title">我的点评列表开发中</view>
-    <view class="text-secondary empty-desc">将接入用户点评查询与删除管理</view>
+  <view wx:for="{{reviews}}" wx:key="id" class="review-card card">
+    <view class="review-head">
+      <view class="dish-name">{{item.dishName}}</view>
+      <view class="audit-label text-secondary">{{item.auditLabel}}</view>
+    </view>
+    <view class="review-rating">{{item.rating}} 星</view>
+    <view class="review-content">{{item.content}}</view>
+    <view class="review-foot">
+      <text class="text-secondary">{{item.createdAt}}</text>
+      <button class="delete-button" size="mini" data-id="{{item.id}}" bindtap="remove"
+              loading="{{deletingId === item.id}}" disabled="{{loading || deletingId !== null}}">删除</button>
+    </view>
   </view>
+  <view class="list-state text-secondary" wx:if="{{loading}}">点评加载中…</view>
+  <view class="list-state card" wx:elif="{{error}}">
+    <view>{{error}}</view>
+    <view class="retry-action" bindtap="retry">重新加载</view>
+  </view>
+  <view class="list-state text-secondary" wx:elif="{{reviews.length === 0}}">你还没有发布点评</view>
+  <view class="list-state text-secondary" wx:elif="{{hasMore}}">上拉加载更多</view>
+  <view class="list-state text-secondary" wx:else>共 {{total}} 条点评，已全部加载</view>
 </view>

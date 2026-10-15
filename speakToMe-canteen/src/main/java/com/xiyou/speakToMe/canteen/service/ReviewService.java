@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.xiyou.speakToMe.canteen.dto.MyReviewVO;
 import com.xiyou.speakToMe.canteen.dto.ReviewCreateReq;
 import com.xiyou.speakToMe.canteen.dto.ReviewVO;
 import com.xiyou.speakToMe.canteen.entity.Dish;
@@ -199,6 +200,30 @@ public class ReviewService {
                 })
                 .toList();
         return PageResult.of(vos, result.getTotal(), page, size);
+    }
+
+    /** 10/15：本人历史点评包含全部审核状态，排除已删除及其他业务模块的记录。 */
+    public PageResult<MyReviewVO> listMine(Long userId, long page, long size) {
+        if (page < 1 || size < 1 || size > 50) {
+            throw new BizException(ErrorCode.BAD_PARAM, "分页参数错误");
+        }
+        Page<Review> result = reviewMapper.selectPage(new Page<>(page, size),
+                new LambdaQueryWrapper<Review>()
+                        .eq(Review::getUserId, userId)
+                        .eq(Review::getModule, "food")
+                        .eq(Review::getTargetType, "dish")
+                        .eq(Review::getIsDeleted, 0)
+                        .orderByDesc(Review::getCreatedAt)
+                        .orderByDesc(Review::getId));
+        List<Long> dishIds = result.getRecords().stream().map(Review::getTargetId).distinct().toList();
+        // 10/15：批量获取菜品名称，菜品被移除时仍允许查看和删除本人历史点评。
+        Map<Long, Dish> dishes = dishIds.isEmpty() ? Map.of()
+                : dishMapper.selectBatchIds(dishIds).stream()
+                        .collect(Collectors.toMap(Dish::getId, Function.identity()));
+        List<MyReviewVO> list = result.getRecords().stream()
+                .map(review -> MyReviewVO.from(review, dishes.get(review.getTargetId())))
+                .toList();
+        return PageResult.of(list, result.getTotal(), page, size);
     }
 
     /** 删除自己的评论：逻辑删除 + 评分回滚 */

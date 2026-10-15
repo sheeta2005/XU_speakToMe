@@ -1,23 +1,27 @@
 package com.xiyou.speakToMe.canteen.controller;
 
+import com.xiyou.speakToMe.canteen.dto.MyReviewVO;
 import com.xiyou.speakToMe.canteen.dto.ReviewCreateReq;
 import com.xiyou.speakToMe.canteen.dto.ReviewVO;
 import com.xiyou.speakToMe.canteen.service.ReviewService;
 import com.xiyou.speakToMe.common.constant.ErrorCode;
 import com.xiyou.speakToMe.common.exception.BizException;
 import com.xiyou.speakToMe.framework.ratelimit.RateLimit;
+import com.xiyou.speakToMe.framework.result.PageResult;
 import com.xiyou.speakToMe.framework.result.Result;
 import com.xiyou.speakToMe.framework.security.UserContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 点评接口（一期核心）：提交评论（限流 5 条/分钟/用户）、删除自己的评论。
+ * 点评接口（一期核心）：提交评论（限流 5 条/分钟/用户）、查询和删除自己的评论。
  */
 @RestController
 @RequestMapping("/api/v1/reviews")
@@ -25,6 +29,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReviewController {
 
     private final ReviewService reviewService;
+
+    /** 10/15：用户身份只从登录上下文取得，客户端不能指定其他用户。 */
+    @GetMapping("/mine")
+    public Result<PageResult<MyReviewVO>> mine(@RequestParam(defaultValue = "1") long page,
+                                              @RequestParam(defaultValue = "10") long size) {
+        return Result.ok(reviewService.listMine(requireUserId(), page, size));
+    }
 
     /** 提交点评：本地敏感词 + 微信 msgSecCheck 双检，审核通过后即时可见 */
     @PostMapping

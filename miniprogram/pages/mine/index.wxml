@@ -3,8 +3,38 @@
     <view class="page-title">我的</view>
     <view class="page-sub text-secondary">账号与设置</view>
   </view>
-  <view class="empty-card card">
-    <view class="empty-title">个人中心开发中</view>
-    <view class="text-secondary empty-desc">我的点评 · 校区修改 · 主题切换将在此展示</view>
+  <view class="state-message text-secondary" wx:if="{{loading}}">资料加载中…</view>
+  <view class="state-card card" wx:elif="{{error}}">
+    <view>{{error}}</view>
+    <view class="link-action" bindtap="loadProfile">重新加载</view>
+  </view>
+  <view wx:elif="{{user}}">
+    <view class="profile-card card">
+      <view class="profile-head">
+        <image class="avatar" wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" mode="aspectFill" />
+        <view class="avatar avatar-fallback" wx:else>邮</view>
+        <view>
+          <view class="nickname">{{user.nickname}}</view>
+          <view class="campus-name text-secondary">{{campusName}}</view>
+        </view>
+      </view>
+      <view class="field-label">昵称</view>
+      <input class="nickname-input" value="{{nickname}}" maxlength="20" disabled="{{saving}}"
+             placeholder="请输入昵称（1-20 个字符）" bindinput="onNicknameInput" />
+      <button class="btn-primary save-button" loading="{{saving}}" disabled="{{saving}}" bindtap="saveProfile">保存昵称</button>
+    </view>
+    <view class="menu-card card">
+      <view class="menu-row" bindtap="goReviews">
+        <text>我的点评</text><text class="text-secondary">查看与管理 ›</text>
+      </view>
+      <view class="menu-row" bindtap="changeCampus">
+        <text>修改校区</text><text class="text-secondary">{{campusName}} ›</text>
+      </view>
+      <picker range="{{themeOptions}}" value="{{themeIndex}}" bindchange="changeTheme">
+        <view class="menu-row">
+          <text>显示主题</text><text class="text-secondary">{{themeOptions[themeIndex]}} ›</text>
+        </view>
+      </picker>
+    </view>
   </view>
 </view>
