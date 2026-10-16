@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -53,15 +54,20 @@ public class AdminReportController {
                                            @RequestParam(defaultValue = "1") long page,
                                            @RequestParam(defaultValue = "20") long size) {
         adminGuard.requireAdmin();
+        // 10/16：后台查询同样限制分页和状态，避免无效状态及无限制取数。
+        if (page < 1 || size < 1 || size > 50 || status == null || status < 0 || status > 2) {
+            throw new BizException(ErrorCode.BAD_PARAM, "分页或工单状态错误");
+        }
         Page<Report> result = reportMapper.selectPage(new Page<>(page, size),
                 new LambdaQueryWrapper<Report>()
                         .eq(Report::getStatus, status)
-                        .orderByAsc(Report::getCreatedAt));
+                        .orderByAsc(Report::getCreatedAt, Report::getId));
         return Result.ok(PageResult.of(result));
     }
 
     /** 处理举报工单 */
     @PostMapping("/{id}/handle")
+    @Transactional
     public Result<Void> handle(@PathVariable Long id, @RequestBody HandleReq req) {
         adminGuard.requireAdmin();
         Report report = reportMapper.selectById(id);
@@ -71,17 +77,30 @@ public class AdminReportController {
         if (!"block".equals(req.getAction()) && !"dismiss".equals(req.getAction())) {
             throw new BizException(ErrorCode.BAD_PARAM, "action 需为 block 或 dismiss");
         }
+        // 10/16：已处理工单不可覆盖；条件更新防止多人同时处理同一工单。
+        if (!Integer.valueOf(0).equals(report.getStatus())) {
+            throw new BizException(ErrorCode.BAD_PARAM, "工单已处理，请刷新列表");
+        }
+        String result = req.getHandleResult() == null ? "" : req.getHandleResult().trim();
+        if (result.length() > 200) {
+            throw new BizException(ErrorCode.BAD_PARAM, "处理说明不能超过 200 字");
+        }
         boolean blocked = "block".equals(req.getAction());
         // 更新工单
-        report.setStatus(1);
-        report.setHandleResult(req.getHandleResult() == null ? "" : req.getHandleResult());
+        report.setStatus(blocked ? 1 : 2);
+        report.setHandleResult(result);
         report.setHandlerId(UserContext.getUserId());
         report.setHandledAt(LocalDateTime.now());
-        reportMapper.updateById(report);
+        if (reportMapper.update(report, new LambdaUpdateWrapper<Report>()
+                .eq(Report::getId, id).eq(Report::getStatus, 0)) != 1) {
+            throw new BizException(ErrorCode.BAD_PARAM, "工单已处理，请刷新列表");
+        }
 
         if (blocked) {
             // 下架被举报评论（audit_status=2 对所有用户不可见）
-            Review review = reviewMapper.selectById(report.getReviewId());
+            // 10/16：锁定评论，串行执行同一条评论的审核及评分刷新。
+            Review review = reviewMapper.selectOne(new LambdaQueryWrapper<Review>()
+                    .eq(Review::getId, report.getReviewId()).last("FOR UPDATE"));
             if (review != null && (review.getIsDeleted() == null || review.getIsDeleted() == 0)) {
                 reviewMapper.update(null, new LambdaUpdateWrapper<Review>()
                         .eq(Review::getId, review.getId())

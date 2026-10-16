@@ -25,7 +25,9 @@ public class AdminGuard {
             throw new BizException(ErrorCode.UNAUTHORIZED, "未登录");
         }
         User user = userMapper.selectById(userId);
-        if (user == null || user.getRole() == null || user.getRole() != 1) {
+        // 10/16：封禁账号即使保留管理员角色也不能进行运营操作。
+        if (user == null || !Integer.valueOf(1).equals(user.getStatus())
+                || !Integer.valueOf(1).equals(user.getRole())) {
             throw new BizException(ErrorCode.FORBIDDEN, "无管理权限");
         }
     }

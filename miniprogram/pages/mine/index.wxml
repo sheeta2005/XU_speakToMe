@@ -24,6 +24,10 @@
       <button class="btn-primary save-button" loading="{{saving}}" disabled="{{saving}}" bindtap="saveProfile">保存昵称</button>
     </view>
     <view class="menu-card card">
+      <!-- 10/16：普通账号不展示运营入口。 -->
+      <view class="menu-row" wx:if="{{user.role === 1}}" bindtap="goAdmin">
+        <text>管理工作台</text><text class="text-secondary">举报与内容维护 ›</text>
+      </view>
       <view class="menu-row" bindtap="goReviews">
         <text>我的点评</text><text class="text-secondary">查看与管理 ›</text>
       </view>

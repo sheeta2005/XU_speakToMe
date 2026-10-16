@@ -174,8 +174,14 @@ public class ReviewService {
                 .eq(Review::getModule, "food")
                 .eq(Review::getTargetType, "dish")
                 .eq(Review::getTargetId, dishId)
-                .eq(Review::getIsDeleted, 0)
-                .in(Review::getAuditStatus, 1, 3);
+                .eq(Review::getIsDeleted, 0);
+        // 10/16：复审内容仅作者可见，公开条件必须与“本人复审”条件整体分组。
+        wrapper.and(visible -> {
+            visible.eq(Review::getAuditStatus, 1);
+            if (currentUserId != null) {
+                visible.or(own -> own.eq(Review::getAuditStatus, 3).eq(Review::getUserId, currentUserId));
+            }
+        });
         if ("high".equals(sort)) {
             wrapper.orderByDesc(Review::getRating).orderByDesc(Review::getCreatedAt);
         } else if ("low".equals(sort)) {
@@ -183,6 +189,7 @@ public class ReviewService {
         } else {
             wrapper.orderByDesc(Review::getCreatedAt);
         }
+        wrapper.orderByDesc(Review::getId);
         Page<Review> result = reviewMapper.selectPage(new Page<>(page, size), wrapper);
 
         // 组装用户信息

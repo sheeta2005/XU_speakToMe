@@ -80,7 +80,9 @@ public class SensitiveWordFilter {
                 new LambdaQueryWrapper<SensitiveWord>().eq(SensitiveWord::getStatus, 1));
         TrieNode newRoot = new TrieNode();
         for (SensitiveWord w : words) {
-            insert(newRoot, w.getWord(), w.getLevel(), w.getCategory());
+            // 10/16：维护时允许录入大小写和全角词，词库与待审文本使用同一归一化口径。
+            String normalized = normalize(w.getWord());
+            if (!normalized.isEmpty()) insert(newRoot, normalized, w.getLevel(), w.getCategory());
         }
         this.root = newRoot;
         log.info("敏感词库加载完成，共 {} 条", words.size());
@@ -91,8 +93,11 @@ public class SensitiveWordFilter {
         for (char c : word.toCharArray()) {
             node = node.children.computeIfAbsent(c, k -> new TrieNode());
         }
-        node.level = level;
-        node.category = category;
+        // 10/16：不同原词归一化后重合时，直接拦截优先于人工复审。
+        if (node.level == null || level < node.level) {
+            node.level = level;
+            node.category = category;
+        }
     }
 
     /** 文本匹配，返回全部命中（含权重等级） */

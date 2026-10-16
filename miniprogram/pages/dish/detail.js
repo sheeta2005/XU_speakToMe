@@ -15,7 +15,12 @@ Page({
     showWrite: false,
     rating: 5,
     content: '',
-    submitting: false
+    submitting: false,
+    reportId: null,
+    reportReasons: ['垃圾广告', '色情内容', '辱骂攻击', '政治敏感', '学术不端', '其他'],
+    reportReason: 0,
+    reportDetail: '',
+    reporting: false
   },
 
   onLoad(options) {
@@ -99,6 +104,39 @@ Page({
       this.loadReviews(true);
     }).catch((err) => wx.showToast({ title: err.message, icon: 'none' }))
       .finally(() => this.setData({ submitting: false }));
+  },
+
+  // 10/16：只为他人已公开的点评打开举报表单，重复举报由后端 24 小时去重。
+  openReport(e) {
+    if (this.data.reporting) return;
+    const review = this.data.reviews.find((item) => item.id === Number(e.currentTarget.dataset.id));
+    if (!review || review.deletable || review.auditStatus !== 1) return;
+    if (!wx.getStorageSync('token')) {
+      wx.reLaunch({ url: '/pages/auth/login' });
+      return;
+    }
+    this.setData({ reportId: review.id, reportReason: 0, reportDetail: '' });
+  },
+
+  pickReportReason(e) { if (!this.data.reporting) this.setData({ reportReason: Number(e.detail.value) }); },
+  onReportInput(e) { if (!this.data.reporting) this.setData({ reportDetail: e.detail.value }); },
+  cancelReport() { if (!this.data.reporting) this.setData({ reportId: null }); },
+
+  // 10/16：成功后关闭表单；失败保留原因和说明，便于纠正或重试。
+  submitReport() {
+    if (!this.data.reportId || this.data.reporting) return;
+    const reasonDetail = this.data.reportDetail.trim();
+    if (reasonDetail.length > 200) {
+      wx.showToast({ title: '举报说明不能超过 200 字', icon: 'none' });
+      return;
+    }
+    this.setData({ reporting: true });
+    return post('/reports', { reviewId: this.data.reportId, reasonType: this.data.reportReason + 1, reasonDetail })
+      .then(() => {
+        this.setData({ reportId: null, reportDetail: '' });
+        wx.showToast({ title: '举报已提交，等待处理', icon: 'none' });
+      }).catch((err) => wx.showToast({ title: err.message, icon: 'none' }))
+      .finally(() => this.setData({ reporting: false }));
   },
 
   /** 删除自己的评论 */

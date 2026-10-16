@@ -8,7 +8,10 @@
     "pages/review/write",
     "pages/rank/index",
     "pages/mine/index",
-    "pages/mine/my-reviews"
+    "pages/mine/my-reviews",
+    "pages/admin/index",
+    "pages/admin/objects",
+    "pages/admin/words"
   ],
   "window": {
     "navigationBarBackgroundColor": "@navBg",

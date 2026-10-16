@@ -129,7 +129,8 @@ public class DishService {
             dish.setRatingCount(0);
         } else {
             dish.setRatingCount(((Number) agg.get("cnt")).intValue());
-            dish.setAvgRating(((BigDecimal) agg.get("avgRating")).setScale(1, RoundingMode.HALF_UP));
+            // 10/16：从聚合数值构造十进制，避免依赖 JDBC 对 AVG 的具体数字类型。
+            dish.setAvgRating(new BigDecimal(agg.get("avgRating").toString()).setScale(1, RoundingMode.HALF_UP));
         }
         dishMapper.updateById(dish);
         // 失效评分缓存，下次读取按需重算

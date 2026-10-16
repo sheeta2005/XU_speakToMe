@@ -1,0 +1,28 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-title">对象维护</view>
+  <view class="state" wx:if="{{!allowed}}">{{loading ? '权限核验中…' : error}}<button wx:if="{{error}}" bindtap="retry">重试</button></view>
+  <view wx:else>
+    <picker range="{{names}}" value="{{typeIndex}}" disabled="{{loading || saving}}" bindchange="changeType"><view class="filter">{{names[typeIndex]}} ▾</view></picker>
+    <button class="btn-primary" disabled="{{loading || saving || !!error}}" bindtap="edit">新增{{config.name}}</button>
+    <!-- 10/16：编辑区置于列表之前，保留失败草稿，父对象按层级名称选择。 -->
+    <view class="card editor" wx:if="{{draft}}">
+      <view class="entry-title">{{draft.id ? '编辑' : '新增'}}{{config.name}}</view>
+      <view class="field-label">名称（最多 {{config.max}} 字）</view>
+      <input value="{{draft.name}}" maxlength="{{config.max}}" data-key="name" disabled="{{saving}}" bindinput="input" />
+      <view wx:if="{{config.parent}}"><view class="field-label">所属{{typeIndex === 1 ? '校区' : (typeIndex === 2 ? '地点' : '档口')}}</view><picker range="{{parents}}" range-key="label" value="{{parentIndex}}" disabled="{{saving}}" bindchange="pickParent"><view class="picker-field">{{parents[parentIndex].label}} ▾</view></picker></view>
+      <view wx:if="{{typeIndex === 1}}"><view class="field-label">地点类型</view><picker range="{{siteTypes}}" value="{{draft.siteType - 1}}" disabled="{{saving}}" bindchange="pickSiteType"><view class="picker-field">{{siteTypes[draft.siteType - 1]}} ▾</view></picker></view>
+      <view wx:for="{{fields}}" wx:key="key"><view class="field-label">{{item.label}}</view><input value="{{item.value}}" maxlength="{{item.max}}" data-key="{{item.key}}" disabled="{{saving}}" bindinput="input" /></view>
+      <view class="field-label">排序（0-255，越小越靠前）</view><input type="number" value="{{draft.sort}}" maxlength="3" data-key="sort" disabled="{{saving}}" bindinput="input" />
+      <view class="field-label">启用 <switch checked="{{draft.status === 1}}" data-key="status" disabled="{{saving}}" bindchange="toggle" /></view>
+      <view class="field-label" wx:if="{{typeIndex === 3}}">在售 <switch checked="{{draft.isAvailable === 1}}" data-key="isAvailable" disabled="{{saving}}" bindchange="toggle" /></view>
+      <view class="text-secondary">停用保留历史数据，不会自动修改下级对象状态。</view>
+      <view class="error" wx:if="{{formError}}">{{formError}}</view>
+      <view class="actions"><button size="mini" disabled="{{saving}}" bindtap="close">取消</button><button size="mini" class="btn-primary" disabled="{{saving || loading}}" loading="{{saving}}" bindtap="save">保存</button></view>
+    </view>
+    <view class="card entry" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="edit"><view class="entry-title">{{item.name}}</view><view class="content text-secondary">{{item.parentName}}</view><view>{{item.status === 1 ? '启用' : '停用'}}{{typeIndex === 3 ? (item.isAvailable === 1 ? ' · 在售' : ' · 已下架') : ''}}</view><view class="link">编辑 ›</view></view>
+    <view class="state text-secondary" wx:if="{{loading}}">加载中…</view>
+    <view class="state" wx:elif="{{error}}">{{error}}<button bindtap="more">重试本页</button></view>
+    <view class="state text-secondary" wx:elif="{{!list.length}}">暂无{{config.name}}，可新增维护</view>
+    <button wx:elif="{{hasMore}}" bindtap="more">加载更多</button>
+  </view>
+</view>

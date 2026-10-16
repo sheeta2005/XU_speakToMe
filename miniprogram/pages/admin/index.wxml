@@ -1,0 +1,39 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-title">管理工作台</view>
+  <view class="state" wx:if="{{!allowed}}">{{loading ? '权限核验中…' : error}}<button wx:if="{{error}}" bindtap="retry">重试</button></view>
+  <view wx:else>
+    <view class="actions"><button size="mini" bindtap="goObjects">对象维护 ›</button><button size="mini" bindtap="goWords">敏感词库 ›</button></view>
+    <view class="tabs"><button class="{{tab === 'reports' ? 'active' : ''}}" disabled="{{loading || working}}" data-tab="reports" bindtap="changeTab">举报工单</button><button class="{{tab === 'reviews' ? 'active' : ''}}" disabled="{{loading || working}}" data-tab="reviews" bindtap="changeTab">人工复审</button></view>
+    <picker range="{{tab === 'reports' ? reportStatuses : reviewStatuses}}" value="{{statusIndex}}" disabled="{{loading || working}}" bindchange="changeStatus"><view class="filter">{{tab === 'reports' ? reportStatuses[statusIndex] : reviewStatuses[statusIndex]}} ▾</view></picker>
+    <view class="card entry" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="select">
+      <view class="entry-title">{{tab === 'reports' ? reasons[item.reasonType - 1] : '点评 · ' + item.rating + ' 星'}}</view>
+      <view class="content">{{tab === 'reports' ? (item.reasonDetail || '未填写补充说明') : item.content}}</view>
+      <view class="text-secondary">{{item.createdAt}}</view>
+      <view class="link">查看并处理 ›</view>
+    </view>
+    <view class="state text-secondary" wx:if="{{loading}}">加载中…</view>
+    <view class="state" wx:elif="{{error}}">{{error}}<button bindtap="more">重试本页</button></view>
+    <view class="state text-secondary" wx:elif="{{!list.length}}">当前分组暂无记录</view>
+    <button wx:elif="{{hasMore}}" bindtap="more">加载更多</button>
+    <!-- 10/16：处理区展示原文及当前状态，工单与点评状态分开显示。 -->
+    <view id="editor" class="card editor" wx:if="{{selected}}">
+      <view class="entry-title">{{tab === 'reports' ? '核实举报' : '审核点评'}}</view>
+      <view wx:if="{{tab === 'reports'}}" class="content">举报原因：{{reasons[selected.reasonType - 1]}}<view>{{selected.reasonDetail || '未填写说明'}}</view></view>
+      <view wx:if="{{detailLoading}}">正在读取原文…</view>
+      <view wx:elif="{{detailError}}">{{detailError}}<button bindtap="loadDetail">重新读取</button></view>
+      <view wx:elif="{{review}}" class="content">{{review.content}}<view class="text-secondary">{{review.isDeleted === 1 ? '作者已删除' : auditLabels[review.auditStatus]}} · {{review.rating}} 星</view><view class="text-secondary">{{review.auditResult}}</view></view>
+      <view wx:if="{{tab === 'reports' && selected.status === 0}}"><view class="field-label">处理说明（最多 200 字）</view><textarea value="{{note}}" maxlength="200" disabled="{{working}}" bindinput="onNote" /></view>
+      <view wx:if="{{tab === 'reports' && selected.status !== 0}}" class="content">处理结果：{{selected.handleResult || '未填写'}}<view class="text-secondary">{{selected.handledAt}}</view></view>
+      <view class="error" wx:if="{{actionError}}">{{actionError}}</view>
+      <view class="actions" wx:if="{{tab === 'reports' && selected.status === 0}}">
+        <button size="mini" disabled="{{working || detailLoading || !review}}" data-action="block" bindtap="decide">确认违规并下架</button>
+        <button size="mini" disabled="{{working || detailLoading}}" data-action="dismiss" bindtap="decide">驳回举报</button>
+      </view>
+      <view class="actions" wx:if="{{tab === 'reviews' && review.isDeleted === 0}}">
+        <button size="mini" disabled="{{working}}" wx:if="{{review.auditStatus !== 1}}" data-action="pass" bindtap="decide">{{review.auditStatus === 2 ? '恢复公开' : '通过复审'}}</button>
+        <button size="mini" disabled="{{working}}" wx:if="{{review.auditStatus !== 2}}" data-action="block" bindtap="decide">{{review.auditStatus === 1 ? '下架点评' : '拦截点评'}}</button>
+      </view>
+      <button disabled="{{working}}" bindtap="close">关闭处理区</button>
+    </view>
+  </view>
+</view>

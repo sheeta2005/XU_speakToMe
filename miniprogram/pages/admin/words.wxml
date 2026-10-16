@@ -1,0 +1,22 @@
+<view class="page-root" data-theme="{{theme}}">
+  <view class="page-title">敏感词库</view>
+  <view class="state" wx:if="{{!allowed}}">{{loading ? '权限核验中…' : error}}<button wx:if="{{error}}" bindtap="retry">重试</button></view>
+  <view wx:else>
+    <button class="btn-primary" disabled="{{loading || saving}}" bindtap="edit">新增敏感词</button>
+    <view class="card editor" wx:if="{{draft}}">
+      <view class="entry-title">{{draft.id ? '编辑敏感词' : '新增敏感词'}}</view>
+      <view class="field-label">词条（最多 64 字）</view><input value="{{draft.word}}" maxlength="64" disabled="{{saving}}" bindinput="input" />
+      <view class="field-label">分类</view><picker range="{{categories}}" value="{{draft.category - 1}}" data-key="category" disabled="{{saving}}" bindchange="pick"><view class="picker-field">{{categories[draft.category - 1]}} ▾</view></picker>
+      <view class="field-label">处理等级</view><picker range="{{levels}}" value="{{draft.level - 1}}" data-key="level" disabled="{{saving}}" bindchange="pick"><view class="picker-field">{{levels[draft.level - 1]}} ▾</view></picker>
+      <view class="field-label" wx:if="{{draft.id}}">启用 <switch checked="{{draft.status === 1}}" disabled="{{saving}}" bindchange="toggle" /></view>
+      <view class="text-secondary">保存后对后续提交生效；历史点评的状态需通过人工复审调整。</view>
+      <view class="error" wx:if="{{formError}}">{{formError}}</view>
+      <view class="actions"><button size="mini" disabled="{{saving}}" bindtap="close">取消</button><button size="mini" class="btn-primary" disabled="{{saving || loading}}" loading="{{saving}}" bindtap="save">保存</button></view>
+    </view>
+    <view class="card entry" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="edit"><view class="entry-title">{{item.word}}</view><view class="content text-secondary">{{categories[item.category - 1]}} · {{levels[item.level - 1]}} · {{item.status === 1 ? '启用' : '停用'}}</view><view class="link">编辑与启停 ›</view></view>
+    <view class="state text-secondary" wx:if="{{loading}}">加载中…</view>
+    <view class="state" wx:elif="{{error}}">{{error}}<button bindtap="more">重试本页</button></view>
+    <view class="state text-secondary" wx:elif="{{!list.length}}">暂无词条，可新增维护</view>
+    <button wx:elif="{{hasMore}}" bindtap="more">加载更多</button>
+  </view>
+</view>

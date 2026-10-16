@@ -69,6 +69,11 @@ Page({
     wx.navigateTo({ url: '/pages/mine/my-reviews' });
   },
 
+  // 10/16：入口随最新角色显示，管理页进入后还会重新向服务端核验。
+  goAdmin() {
+    if (this.data.user && this.data.user.role === 1) wx.navigateTo({ url: '/pages/admin/index' });
+  },
+
   changeCampus() {
     wx.navigateTo({ url: '/pages/auth/campus' });
   },

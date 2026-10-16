@@ -65,6 +65,21 @@
         <view class="review-time text-secondary">{{item.createdAt}}</view>
         <view class="review-audit text-secondary" wx:if="{{item.auditStatus === 3}}">审核中，仅自己可见</view>
         <view class="review-del" wx:if="{{item.deletable}}" data-id="{{item.id}}" catchtap="remove">删除</view>
+        <view class="review-report" wx:if="{{!item.deletable && item.auditStatus === 1}}" data-id="{{item.id}}" catchtap="openReport">举报</view>
+      </view>
+      <!-- 10/16：表单紧跟所选评论，避免用户误报其他内容。 -->
+      <view class="report-panel" wx:if="{{reportId === item.id}}">
+        <view>举报原因</view>
+        <picker range="{{reportReasons}}" value="{{reportReason}}" disabled="{{reporting}}" bindchange="pickReportReason">
+          <view class="report-picker">{{reportReasons[reportReason]}} ›</view>
+        </picker>
+        <textarea class="write-input" value="{{reportDetail}}" maxlength="200" disabled="{{reporting}}"
+          placeholder="补充说明（选填，最多 200 字）" bindinput="onReportInput" />
+        <view class="text-secondary">请如实举报，同一条点评 24 小时内可举报一次。</view>
+        <view class="report-actions">
+          <button size="mini" disabled="{{reporting}}" bindtap="cancelReport">取消</button>
+          <button size="mini" class="btn-primary" loading="{{reporting}}" disabled="{{reporting}}" bindtap="submitReport">提交举报</button>
+        </view>
       </view>
     </view>
     <view class="list-empty text-secondary" wx:if="{{reviews.length === 0}}">还没有点评，来当第一个吧</view>
