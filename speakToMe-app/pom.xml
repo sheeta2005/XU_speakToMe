@@ -15,6 +15,12 @@
     <description>启动模块：Spring Boot 主应用、application.yml、组件扫描入口（依赖全部业务模块）</description>
 
     <dependencies>
+        <!-- 10/20：启动配置和演示环境隔离使用独立回归测试。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.me</groupId>
             <artifactId>speakToMe-common</artifactId>

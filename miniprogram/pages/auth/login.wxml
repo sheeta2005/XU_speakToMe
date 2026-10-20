@@ -5,8 +5,12 @@
   </view>
 
   <view class="login-card card">
-    <view class="login-tip">使用微信授权登录，发现大家最爱的食堂味道</view>
-    <button class="btn-primary login-btn" bindtap="onLogin" loading="{{loading}}">
+    <view class="login-tip">{{demoMode ? '本地演示环境：选择身份体验，评论由管理员人工复审' : '使用微信授权登录，发现大家最爱的食堂味道'}}</view>
+    <block wx:if="{{demoMode}}">
+      <button class="btn-primary login-btn" bindtap="onDemoLogin" data-code="demo-user" loading="{{loading}}" disabled="{{loading}}">以演示同学登录</button>
+      <button class="login-btn" bindtap="onDemoLogin" data-code="demo-admin" disabled="{{loading}}">以演示管理员登录</button>
+    </block>
+    <button wx:else class="btn-primary login-btn" bindtap="onLogin" loading="{{loading}}">
       {{loading ? '登录中...' : '微信一键登录'}}
     </button>
     <view class="login-agreement text-secondary">

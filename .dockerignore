@@ -1,0 +1,14 @@
+.git
+.idea
+**/target
+**/*.log
+tmp
+.env
+.env.*
+**/*.local.yml
+**/application-local.yml
+application-local.yml
+**/project.private.config.json
+miniprogram
+tests
+project.config.json

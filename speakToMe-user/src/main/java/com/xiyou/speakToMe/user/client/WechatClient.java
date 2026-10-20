@@ -9,6 +9,7 @@ import com.xiyou.speakToMe.common.exception.BizException;
 import com.xiyou.speakToMe.user.config.WxProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@Profile("!demo") // 10/20：真实微信客户端不参与本地演示环境。
 public class WechatClient {
 
     private final WxProperties wxProperties;

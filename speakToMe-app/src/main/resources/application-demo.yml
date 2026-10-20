@@ -1,0 +1,4 @@
+# 10/20：仅用于本地演示；AES_KEY 和数据库、Redis 连接仍需配置。
+spring:
+  application:
+    name: speak-to-me-demo

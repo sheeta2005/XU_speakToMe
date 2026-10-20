@@ -16,6 +16,14 @@ target/
 *.local.yml
 application-local.yml
 .env
+.env.*
+!.env.example
+!deploy/*.env.example
+application-demo.local.yml
+# 10/20：微信开发者工具个人设置不参与模板交付。
+project.private.config.json
+miniprogram/project.private.config.json
+/project.config.json
 
 # 日志与临时文件
 logs/

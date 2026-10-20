@@ -1,0 +1,9 @@
+# 10/20：跨平台脚本与容器配置统一使用 LF，Windows 启动脚本保留 CRLF。
+* text=auto
+*.sh text eol=lf
+mvnw text eol=lf
+*.cmd text eol=crlf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.sql text eol=lf
+*.properties text eol=lf

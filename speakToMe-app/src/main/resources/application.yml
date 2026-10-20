@@ -4,16 +4,20 @@
 # =========================================================
 server:
   port: 8080
+  # 10/20：本机启动默认仅监听回环地址，容器通过环境变量覆盖。
+  address: ${SERVER_ADDRESS:127.0.0.1}
 
 spring:
+  profiles:
+    default: prod
   application:
     name: speak-to-me
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # 建库语句见 sql/schema.sql，库名 speak_to_me，字符集 utf8mb4
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/speak_to_me?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:root}
+    # 10/20：空库初始化见 sql/init/01-schema.sql，库名 speak_to_me，字符集 utf8mb4。
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/speak_to_me?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:speak_to_me}
+    password: ${MYSQL_PASSWORD:}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -40,7 +44,7 @@ mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 生产环境改为 Slf4jImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     db-config:
       id-type: auto

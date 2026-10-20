@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@Profile("!demo") // 10/20：正式环境始终使用真实微信内容安全客户端。
 public class WechatContentClient {
 
     private static final String TOKEN_URL =

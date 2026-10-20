@@ -4,11 +4,32 @@ const { post } = require('../../utils/request');
 Page({
   data: {
     theme: '',
-    loading: false
+    loading: false,
+    demoMode: false
   },
 
   onShow() {
-    this.setData({ theme: app.getTheme() });
+    this.setData({ theme: app.getTheme(), demoMode: app.globalData.demoMode });
+  },
+
+  /** 10/20：开发版才允许选择固定演示身份，后端仍须运行独立 demo 环境。 */
+  onDemoLogin(event) {
+    if (!app.globalData.demoMode || this.data.loading) return;
+    const code = event.currentTarget.dataset.code;
+    if (code !== 'demo-user' && code !== 'demo-admin') return;
+    this.setData({ loading: true });
+    return post('/auth/login', { code })
+      .then((data) => {
+        wx.setStorageSync('token', data.token);
+        wx.setStorageSync('user', data.user);
+        if (data.needCampus) {
+          wx.navigateTo({ url: '/pages/auth/campus' });
+        } else {
+          wx.switchTab({ url: '/pages/site/index' });
+        }
+      })
+      .catch((err) => wx.showToast({ title: err.message, icon: 'none' }))
+      .finally(() => this.setData({ loading: false }));
   },
 
   /** wx.login -> 后端 code2session -> 存 token -> 按需跳转 */
