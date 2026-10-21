@@ -45,7 +45,11 @@ public class RateLimitAspect {
         String key = resolveKey(joinPoint, rateLimit.key());
         Long count = redis.execute(RATE_LIMIT_SCRIPT, Collections.singletonList(key),
                 String.valueOf(rateLimit.window()));
-        long current = count == null ? 0L : count;
+        // 10/21：没有可信计数时拒绝执行，避免 Redis 异常结果绕过限流。
+        if (count == null) {
+            throw new BizException(ErrorCode.SYSTEM_ERROR, "限流服务暂不可用，请稍后再试");
+        }
+        long current = count;
         if (current > rateLimit.limit()) {
             log.warn("触发限流 key={} count={} limit={}", key, current, rateLimit.limit());
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "操作过于频繁，请稍后再试");

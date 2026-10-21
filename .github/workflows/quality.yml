@@ -1,0 +1,88 @@
+name: 自动质量检查
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# 10/21：只读权限、无生产凭证；每次推送和 PR 都执行同一套质量检查。
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: 后端与真实 Redis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_REDIS_PORT: '6379'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: 构建并执行全部后端测试
+        run: ./mvnw -B clean verify
+      - name: 保存测试报告
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-test-reports
+          path: '**/target/surefire-reports/'
+          retention-days: 7
+
+  miniprogram:
+    name: 小程序静态检查与逻辑测试
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - run: node scripts/check-miniprogram.cjs
+      - run: node --test tests/miniprogram/*.test.cjs
+
+  demo:
+    name: 干净源码容器与业务验收
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 初始化独立演示环境
+        run: sh scripts/init-env.sh
+      - name: 构建并等待服务健康
+        run: docker compose -p ci up -d --build --wait --wait-timeout 300
+      - name: 执行真实 MySQL 与 Redis 业务流程
+        shell: pwsh
+        run: ./scripts/smoke-demo.ps1
+      - name: 失败时输出服务日志
+        if: failure()
+        run: docker compose -p ci logs --no-color --tail=100
+      - name: 清理本次临时环境
+        if: always()
+        # 10/21：仅 CI 临时项目销毁数据卷，本机持久化数据禁止照搬此步骤。
+        run: docker compose -p ci down -v --remove-orphans

@@ -15,6 +15,12 @@ import com.xiyou.speakToMe.content.controller.ReportController;
 import com.xiyou.speakToMe.content.filter.SensitiveWordFilter;
 import com.xiyou.speakToMe.content.mapper.*;
 import com.xiyou.speakToMe.content.service.ReportService;
+import com.xiyou.speakToMe.content.service.AuditLogService;
+import com.xiyou.speakToMe.content.client.WechatContentClient;
+import com.xiyou.speakToMe.canteen.dto.ReviewCreateReq;
+import com.xiyou.speakToMe.common.exception.BizException;
+import com.xiyou.speakToMe.common.constant.ErrorCode;
+import com.xiyou.speakToMe.common.util.AesGcmUtil;
 import com.xiyou.speakToMe.framework.exception.GlobalExceptionHandler;
 import com.xiyou.speakToMe.framework.security.UserContext;
 import com.xiyou.speakToMe.user.mapper.UserMapper;
@@ -30,6 +36,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 
@@ -51,6 +58,8 @@ class ModerationFlowTest {
     private MockMvc mvc;
     private StringRedisTemplate redis;
     private SensitiveWordFilter filter;
+    private ReviewService reviewService;
+    private WechatContentClient wechat;
     private final Set<String> duplicateKeys = new HashSet<>();
 
     @BeforeEach
@@ -82,6 +91,11 @@ class ModerationFlowTest {
                 CREATE TABLE sensitive_word (id BIGINT AUTO_INCREMENT PRIMARY KEY, word VARCHAR(64) UNIQUE,
                   category INT, level INT, status INT, source VARCHAR(32),
                   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP)
+                """);
+        jdbc.execute("""
+                CREATE TABLE audit_log (id BIGINT AUTO_INCREMENT PRIMARY KEY, review_id BIGINT, user_id BIGINT,
+                  content VARCHAR(500), check_type INT, hit_word VARCHAR(64), risk_level INT,
+                  wx_err_code INT, wx_err_msg VARCHAR(512), result INT, create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
                 """);
         jdbc.execute("""
                 CREATE TABLE campus (id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(32), sort INT DEFAULT 0,
@@ -117,7 +131,7 @@ class ModerationFlowTest {
         MybatisConfiguration config = new MybatisConfiguration();
         config.setMapUnderscoreToCamelCase(true);
         for (Class<?> mapper : new Class<?>[]{UserMapper.class, ReviewMapper.class, ReportMapper.class,
-                SensitiveWordMapper.class, CampusMapper.class, SiteMapper.class, StallMapper.class, DishMapper.class}) {
+                SensitiveWordMapper.class, AuditLogMapper.class, CampusMapper.class, SiteMapper.class, StallMapper.class, DishMapper.class}) {
             config.addMapper(mapper);
         }
         MybatisPlusInterceptor pagination = new MybatisPlusInterceptor();
@@ -140,7 +154,16 @@ class ModerationFlowTest {
         when(redis.delete(anyString())).thenAnswer(invocation -> duplicateKeys.remove(invocation.getArgument(0)));
         filter = new SensitiveWordFilter(words);
         DishService dishService = new DishService(dishes, reviews, redis);
-        ReviewService reviewService = new ReviewService(reviews, dishes, users, filter, null, null, dishService);
+        // 10/21：补齐真实审核日志 Mapper 与事务代理，验证拒绝响应不会把审计记录回滚。
+        wechat = mock(WechatContentClient.class);
+        reviewService = new ReviewService(reviews, dishes, users, filter, wechat,
+                new AuditLogService(session.getMapper(AuditLogMapper.class)), dishService);
+        String aesKey = AesGcmUtil.generateKey();
+        ReflectionTestUtils.setField(reviewService, "aesKey", aesKey);
+        ReflectionTestUtils.setField(reviewService, "contentMin", 10);
+        ReflectionTestUtils.setField(reviewService, "contentMax", 200);
+        jdbc.update("UPDATE user SET openid_cipher=? WHERE id=3", AesGcmUtil.encrypt("测试作者身份", aesKey));
+        reviewService = transactional(reviewService, ds);
         AdminGuard guard = new AdminGuard(users);
         mvc = MockMvcBuilders.standaloneSetup(
                         new ReportController(transactional(new ReportService(reports, redis), ds)),
@@ -152,6 +175,71 @@ class ModerationFlowTest {
                         new DishController(dishService, reviewService))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
         UserContext.set(2L, "举报人");
+    }
+
+    private ReviewCreateReq submission() {
+        ReviewCreateReq req = new ReviewCreateReq();
+        req.setModule("food");
+        req.setTargetType("dish");
+        req.setTargetId(10L);
+        req.setRating(1);
+        req.setContent("这是一条用于验证审核链路的点评正文");
+        return req;
+    }
+
+    @Test
+    void unavailableWechatCommitsManualReviewAndLogWithoutPublishingOrRating() {
+        when(wechat.checkText(anyString(), anyString(), anyString()))
+                .thenThrow(new BizException(ErrorCode.SYSTEM_ERROR, "模拟审核服务不可用"));
+        var result = reviewService.submit(3L, submission());
+        assertEquals(3, result.getAuditStatus());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM audit_log WHERE review_id=? AND risk_level=1", Integer.class, result.getId()));
+        assertEquals(1, jdbc.queryForObject("SELECT rating_count FROM dish WHERE id=10", Integer.class));
+        assertEquals(1, reviewService.listByDish(10L, 2L, 1, 10, "new").getTotal());
+        assertEquals(3, reviewService.listByDish(10L, 3L, 1, 10, "new").getTotal());
+    }
+
+    @Test
+    void riskyWechatKeepsBlockedRecordAndAuditLogAfterErrorResponse() {
+        when(wechat.checkText(anyString(), anyString(), anyString()))
+                .thenReturn(new WechatContentClient.CheckResult(false, false, true, 1, "risky"));
+        assertEquals(ErrorCode.CONTENT_BLOCKED,
+                assertThrows(BizException.class, () -> reviewService.submit(3L, submission())).getCode());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM review WHERE audit_status=2", Integer.class));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM audit_log WHERE result=0 AND check_type=2", Integer.class));
+        assertEquals(1, jdbc.queryForObject("SELECT rating_count FROM dish WHERE id=10", Integer.class));
+    }
+
+    @Test
+    void localBlockKeepsLogWithoutSendingContentToWechat() {
+        jdbc.update("INSERT INTO sensitive_word(word,category,level,status) VALUES ('审核链路',1,1,1)");
+        filter.reload();
+        assertEquals(ErrorCode.CONTENT_BLOCKED,
+                assertThrows(BizException.class, () -> reviewService.submit(3L, submission())).getCode());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM audit_log WHERE check_type=1 AND result=0", Integer.class));
+        assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM review", Integer.class));
+        verifyNoInteractions(wechat);
+    }
+
+    @Test
+    void localManualWordCannotBeOverriddenByWechatPass() {
+        jdbc.update("INSERT INTO sensitive_word(word,category,level,status) VALUES ('审核链路',1,2,1)");
+        filter.reload();
+        when(wechat.checkText(anyString(), anyString(), anyString()))
+                .thenReturn(new WechatContentClient.CheckResult(true, false, false, 0, "pass"));
+        assertEquals(3, reviewService.submit(3L, submission()).getAuditStatus());
+        assertEquals(1, jdbc.queryForObject("SELECT rating_count FROM dish WHERE id=10", Integer.class));
+    }
+
+    @Test
+    void databaseFailureStillRollsBackReviewAndAuditTogether() {
+        when(wechat.checkText(anyString(), anyString(), anyString()))
+                .thenReturn(new WechatContentClient.CheckResult(false, true, false, 0, "review"));
+        jdbc.execute("ALTER TABLE audit_log ADD CONSTRAINT reject_test_log CHECK (user_id <> 3)");
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
+                () -> reviewService.submit(3L, submission()));
+        assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM review", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM audit_log", Integer.class));
     }
 
     // 10/16：测试保留生产事务边界，验证出错后工单、审核状态和评分同时回滚。

@@ -79,7 +79,8 @@ public class ReviewService {
      * 提交点评（Controller 层已挂 @RateLimit 用户维度限流 5 条/分钟；
      * IP 维度限流由 WAF/Nginx 层保障）。
      */
-    @Transactional
+    // 10/21：明确的内容拦截保留审核记录；数据库等其他失败仍整笔回滚。
+    @Transactional(noRollbackFor = ContentBlockedException.class)
     public ReviewVO submit(Long userId, ReviewCreateReq req) {
         // 1) 基础校验
         if (req.getRating() == null || req.getRating() < 1 || req.getRating() > 5) {
@@ -106,7 +107,7 @@ public class ReviewService {
         if (local.hasLevel1()) {
             auditLogService.log(null, userId, content, 1, local.firstHitWord(), 2, 0);
             log.warn("本地敏感词拦截 userId={} word={}", userId, local.firstHitWord());
-            throw new BizException(ErrorCode.CONTENT_BLOCKED, "内容包含违规信息，请修改后再提交");
+            throw new ContentBlockedException("内容包含违规信息，请修改后再提交");
         }
         boolean needManualReview = local.hasLevel2();
 
@@ -157,12 +158,19 @@ public class ReviewService {
         reviewMapper.updateById(review);
 
         if (auditStatus == 2) {
-            throw new BizException(ErrorCode.CONTENT_BLOCKED, "内容需修改后重新提交");
+            throw new ContentBlockedException("内容需修改后重新提交");
         }
         if (auditStatus == 1) {
             dishService.refreshRating(req.getTargetId());
         }
         return ReviewVO.from(review, null, null, true);
+    }
+
+    /** 10/21：只标记已完成审核的业务拒绝，不能扩大到所有业务异常。 */
+    private static final class ContentBlockedException extends BizException {
+        private ContentBlockedException(String message) {
+            super(ErrorCode.CONTENT_BLOCKED, message);
+        }
     }
 
     /** 菜品评论分页列表（仅展示审核通过 + 本人可见的复审中评论） */

@@ -11,8 +11,8 @@
 ```powershell
 git clone https://github.com/sheeta2005/XU_speakToMe.git
 cd XU_speakToMe
-# 第四批合并前请切换到交付分支。
-git switch codex/quickstart-2026-10-20
+# 当前交付批次合并前请切换到第五批分支。
+git switch codex/quality-gates-2026-10-21
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/init-env.ps1
 docker compose up -d --build --wait
 ```
@@ -85,6 +85,7 @@ mysql -uroot -p speak_to_me < sql/init/02-example-data.sql
 java -jar speakToMe-app/target/speak-to-me.jar --spring.profiles.active=local
 # 前端逻辑测试需 Node.js 22+，无 npm 安装步骤。
 node --test tests/miniprogram/*.test.cjs
+node scripts/check-miniprogram.cjs
 ```
 
 启动后访问 `http://localhost:8080/api/v1/campuses` 验证服务是否就绪（该接口无需登录）。
@@ -101,4 +102,5 @@ node --test tests/miniprogram/*.test.cjs
 - 真实环境本地敏感词预检和微信内容安全审核并用；日志已有写入和过期删除，删除前独立归档尚待完善。
 - `deploy/nginx.conf` 是需要配置域名、证书与 CDN 白名单的历史模板；未配置白名单会拒绝 API 请求，不宜直接照搬。
 - `docker compose down` 保留命名卷；`down -v` 会删除数据，不是排错或升级步骤。
-- 真实微信联调、真机、CI、数据库迁移、生产运维、许可证及开源规范仍需后续完成，详见[实施计划](docs/分批实施计划.md)与[功能状态](docs/项目功能清单与完成情况.md)。
+- 已提供推送与 PR 的后端/真实 Redis、小程序与 Compose 自动检查；本机微信编译器检查也已通过。完整测试方式、真实微信与真机待验收项见[第五批说明](docs/第五批功能与验收说明.md)。
+- 真实微信联调、真机、数据库迁移、生产运维、许可证及开源规范仍需后续完成，详见[实施计划](docs/分批实施计划.md)与[功能状态](docs/项目功能清单与完成情况.md)。

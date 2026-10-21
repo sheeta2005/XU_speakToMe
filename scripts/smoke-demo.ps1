@@ -16,6 +16,9 @@ function Require-Success($Response) {
 }
 $campuses = Require-Success (Request-Api GET '/campuses')
 if ($campuses.Count -lt 1) { throw '缺少校区示例数据。' }
+# 10/21：真实登录拦截器必须区分未登录与失效会话，不能直接进入业务接口。
+if ((Request-Api GET '/auth/me').code -ne 10001) { throw '匿名请求未被拦截。' }
+if ((Request-Api GET '/auth/me' 'invalid-smoke-session').code -ne 10002) { throw '失效会话未被拦截。' }
 $user = Require-Success (Request-Api POST '/auth/login' '' @{ code = 'demo-user' })
 $admin = Require-Success (Request-Api POST '/auth/login' '' @{ code = 'demo-admin' })
 if ($user.user.role -ne 0 -or $admin.user.role -ne 1) { throw '演示身份权限不符。' }
@@ -53,4 +56,12 @@ try {
 }
 $restored = Require-Success (Request-Api GET '/dishes/1' $user.token)
 if ($restored.ratingCount -ne $before.ratingCount) { throw '删除后评分计数未恢复。' }
-Write-Output '演示验收通过：校区、真实会话、个人资料、权限隔离、点评、复审、评分、榜单、举报处理、删除。'
+# 10/21：变换伪造代理头仍应共用同一登录计数键；仅在业务验收结束后触发限流。
+for ($attempt = 1; $attempt -le 6; $attempt++) {
+    $rateResult = Invoke-RestMethod -Method POST -Uri "$BaseUrl/auth/login" `
+        -ContentType 'application/json' -Body '{"code":"invalid-smoke-code"}' `
+        -Headers @{ 'X-Forwarded-For' = "192.0.2.$attempt"; 'X-Real-IP' = "198.51.100.$attempt" }
+    if ($rateResult.code -notin @(20001, 30001)) { throw '限流验收返回非预期结果。' }
+}
+if ($rateResult.code -ne 30001) { throw '伪造代理头绕过了登录限流。' }
+Write-Output '演示验收通过：校区、真实会话、登录拦截、个人资料、权限隔离、点评、复审、评分、榜单、举报处理、删除、登录限流。'

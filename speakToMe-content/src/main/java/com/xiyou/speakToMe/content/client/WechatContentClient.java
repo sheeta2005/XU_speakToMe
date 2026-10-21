@@ -59,39 +59,53 @@ public class WechatContentClient {
      * @param clientMsgId 业务消息 ID（评论 ID），便于微信端去重追溯
      */
     public CheckResult checkText(String content, String openid, String clientMsgId) {
-        String token = accessToken();
-        JSONObject body = new JSONObject();
-        body.set("version", 2);
-        body.set("scene", 2);
-        body.set("openid", openid);
-        body.set("content", content);
-        body.set("clientMsgId", clientMsgId);
+        // 10/21：审核缺失、超时及解析异常必须进入调用方人工复审，不能默认放行。
+        try {
+            String token = accessToken();
+            JSONObject body = new JSONObject();
+            body.set("version", 2);
+            body.set("scene", 2);
+            body.set("openid", openid);
+            body.set("content", content);
+            body.set("clientMsgId", clientMsgId);
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("access_token", token);
-        String resp = HttpUtil.post(msgSecCheckUrl + "?access_token=" + token, body.toString(), 5000);
-        JSONObject json = JSONUtil.parseObj(resp);
+            String resp = HttpUtil.post(msgSecCheckUrl + "?access_token=" + token, body.toString(), 5000);
+            JSONObject json = JSONUtil.parseObj(resp);
 
-        Integer errcode = json.getInt("errcode");
-        if (errcode != null && errcode != 0) {
-            log.warn("msgSecCheck 调用失败 errcode={} errmsg={}", errcode, json.getStr("errmsg"));
-            // 87014 表示内容违规（老语义）；其余按接口异常降级处理由调用方决定
-            if (errcode == 87014) {
-                return new CheckResult(false, false, true, 0, "risky");
+            if (json.containsKey("errcode") && !json.getStr("errcode", "").matches("-?\\d+")) {
+                throw new BizException(ErrorCode.SYSTEM_ERROR, "内容安全服务响应异常");
             }
+            Integer errcode = json.getInt("errcode");
+            if (errcode != null && errcode != 0) {
+                log.warn("msgSecCheck 调用失败 errcode={}", errcode);
+                // 10/21：失效凭证不继续缓存到七千秒，下一条点评重新获取；本条仍转人工。
+                if (errcode == 40001 || errcode == 40014 || errcode == 42001) {
+                    redis.delete(TOKEN_CACHE_KEY);
+                }
+                // 87014 表示内容违规（老语义）；其余按接口异常降级处理由调用方决定
+                if (errcode == 87014) {
+                    return new CheckResult(false, false, true, 0, "risky");
+                }
+                throw new BizException(ErrorCode.SYSTEM_ERROR, "内容安全服务暂不可用");
+            }
+            JSONObject result = json.getJSONObject("result");
+            if (result == null) {
+                throw new BizException(ErrorCode.SYSTEM_ERROR, "内容安全服务缺少审核结果");
+            }
+            String suggest = result.getStr("suggest", "");
+            int label = result.getInt("label", 0);
+            return switch (suggest) {
+                case "pass" -> new CheckResult(true, false, false, label, suggest);
+                case "review" -> new CheckResult(false, true, false, label, suggest);
+                case "risky" -> new CheckResult(false, false, true, label, suggest);
+                default -> throw new BizException(ErrorCode.SYSTEM_ERROR, "内容安全服务审核结果异常");
+            };
+        } catch (BizException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            log.warn("msgSecCheck 请求、缓存或解析异常 type={}", e.getClass().getSimpleName());
             throw new BizException(ErrorCode.SYSTEM_ERROR, "内容安全服务暂不可用");
         }
-        JSONObject result = json.getJSONObject("result");
-        if (result == null) {
-            return new CheckResult(true, false, false, 0, "pass");
-        }
-        String suggest = StrUtil.nullToDefault(result.getStr("suggest"), "pass");
-        int label = result.getInt("label", 0);
-        return switch (suggest) {
-            case "pass" -> new CheckResult(true, false, false, label, suggest);
-            case "review" -> new CheckResult(false, true, false, label, suggest);
-            default -> new CheckResult(false, false, true, label, suggest); // risky
-        };
     }
 
     /** 获取 access_token（Redis 缓存，TTL 7000s） */
@@ -107,7 +121,8 @@ public class WechatContentClient {
         JSONObject json = JSONUtil.parseObj(resp);
         String token = json.getStr("access_token");
         if (StrUtil.isBlank(token)) {
-            log.error("获取 access_token 失败: {}", resp);
+            // 10/21：原始响应可能含凭证，只记录稳定错误码。
+            log.error("获取 access_token 失败 errcode={}", json.getInt("errcode"));
             throw new BizException(ErrorCode.SYSTEM_ERROR, "微信凭证获取失败");
         }
         redis.opsForValue().set(TOKEN_CACHE_KEY, token, Duration.ofSeconds(7000));

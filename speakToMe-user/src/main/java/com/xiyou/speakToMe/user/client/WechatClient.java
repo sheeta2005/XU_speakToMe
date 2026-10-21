@@ -40,20 +40,30 @@ public class WechatClient {
         params.put("js_code", code);
         params.put("grant_type", "authorization_code");
 
-        String body = HttpUtil.get(wxProperties.getSessionUrl(), params, 5000);
-        JSONObject json = JSONUtil.parseObj(body);
+        // 10/21：传输与解析失败统一转业务异常，日志不输出凭证、openid 或原始响应。
+        try {
+            String body = HttpUtil.get(wxProperties.getSessionUrl(), params, 5000);
+            JSONObject json = JSONUtil.parseObj(body);
 
-        Integer errcode = json.getInt("errcode");
-        if (errcode != null && errcode != 0) {
-            String errmsg = json.getStr("errmsg", "unknown");
-            log.warn("code2session 失败 errcode={} errmsg={}", errcode, errmsg);
+            if (json.containsKey("errcode") && !json.getStr("errcode", "").matches("-?\\d+")) {
+                throw new BizException(ErrorCode.SYSTEM_ERROR, "微信登录响应异常，请稍后重试");
+            }
+            Integer errcode = json.getInt("errcode");
+            if (errcode != null && errcode != 0) {
+                log.warn("code2session 失败 errcode={}", errcode);
+                throw new BizException(ErrorCode.SYSTEM_ERROR, "微信登录失败，请稍后重试");
+            }
+            String openid = json.getStr("openid");
+            if (StrUtil.isBlank(openid)) {
+                log.warn("code2session 返回无 openid");
+                throw new BizException(ErrorCode.SYSTEM_ERROR, "微信登录失败，请重新进入小程序");
+            }
+            return openid;
+        } catch (BizException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            log.warn("code2session 请求或解析异常 type={}", e.getClass().getSimpleName());
             throw new BizException(ErrorCode.SYSTEM_ERROR, "微信登录失败，请稍后重试");
         }
-        String openid = json.getStr("openid");
-        if (StrUtil.isBlank(openid)) {
-            log.warn("code2session 返回无 openid: {}", body);
-            throw new BizException(ErrorCode.SYSTEM_ERROR, "微信登录失败，请重新进入小程序");
-        }
-        return openid;
     }
 }
