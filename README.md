@@ -11,8 +11,8 @@
 ```powershell
 git clone https://github.com/sheeta2005/XU_speakToMe.git
 cd XU_speakToMe
-# 当前交付批次合并前请切换到第五批分支。
-git switch codex/quality-gates-2026-10-21
+# 当前交付批次合并前请切换到第六批分支。
+git switch codex/production-ops-2026-10-22
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/init-env.ps1
 docker compose up -d --build --wait
 ```
@@ -53,15 +53,13 @@ speakToMe/
 依赖方向（严格单向）：`app -> admin -> canteen/user/content -> framework -> common`。
 二期新增 trade 等模块只需依赖 framework + common 即可接入，用户/审核体系天然复用。
 
-## 初始化数据库
+## 数据库迁移（10/22）
 
 ```bash
 mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS speak_to_me DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -uroot -p speak_to_me < sql/init/01-schema.sql
-mysql -uroot -p speak_to_me < sql/init/02-example-data.sql
 ```
 
-以上脚本仅用于空数据库；建表和示例数据已拆分。Compose 首次创建 MySQL 数据卷时自动执行，后续启动保留数据。旧 `sql/schema.sql` 含 DROP TABLE，不能作为升级脚本在持久化数据库上重复执行。
+Compose 自动创建数据库；直接 Java 启动时先创建上述空库并授权应用账号。应用通过 Flyway 自动执行 V1、V2，只有 demo 加载示例数据，生产空库不写演示校区、菜品或账号。存量无版本库必须先备份并核验结构后显式接管；不会自动跳过迁移校验。操作见[部署与运维](docs/部署与运维.md)。`sql/init` 与含 DROP TABLE 的旧 `sql/schema.sql` 仅留作历史参考，不用于升级。
 
 ## 配置
 
@@ -96,11 +94,11 @@ node scripts/check-miniprogram.cjs
 
 ## 生产部署边界
 
-- 正式部署需 HTTPS、合法域名、数据备份和监控；当前 Compose 面向本地演示及联调，端口只绑定回环地址。
+- 根目录 Compose 面向本地演示及联调，端口只绑定回环地址。单机生产使用独立 `deploy/compose.prod.yaml`，配套 HTTPS 反代、内部健康检查与备份恢复脚本，详见[部署与运维](docs/部署与运维.md)。
 - 敏感信息（openid/手机号）AES-256-GCM 加密 + SHA-256 摘要索引
-- 点评用户限流使用 Redis Lua；代理层 IP 限流需由部署者配置。
-- 真实环境本地敏感词预检和微信内容安全审核并用；日志已有写入和过期删除，删除前独立归档尚待完善。
+- 点评用户限流使用 Redis Lua；生产 Nginx 提供 IP 限流，应用仅信任模板内的反代来源。
+- 真实环境本地敏感词预检和微信内容安全审核并用；历史审核日志先写持久卷、同步落盘并校验，成功才删除数据库记录。
 - `deploy/nginx.conf` 是需要配置域名、证书与 CDN 白名单的历史模板；未配置白名单会拒绝 API 请求，不宜直接照搬。
 - `docker compose down` 保留命名卷；`down -v` 会删除数据，不是排错或升级步骤。
 - 已提供推送与 PR 的后端/真实 Redis、小程序与 Compose 自动检查；本机微信编译器检查也已通过。完整测试方式、真实微信与真机待验收项见[第五批说明](docs/第五批功能与验收说明.md)。
-- 真实微信联调、真机、数据库迁移、生产运维、许可证及开源规范仍需后续完成，详见[实施计划](docs/分批实施计划.md)与[功能状态](docs/项目功能清单与完成情况.md)。
+- 第六批已补迁移、归档、单机部署与恢复回滚演练，见[第六批验收](docs/第六批功能与验收说明.md)。真实微信与真机、真实服务器及异地备份告警配置、二次开发文档、许可证与开源发布仍需完成，详见[实施计划](docs/分批实施计划.md)与[功能状态](docs/项目功能清单与完成情况.md)。

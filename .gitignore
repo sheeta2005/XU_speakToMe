@@ -29,6 +29,11 @@ miniprogram/project.private.config.json
 logs/
 *.log
 tmp/
+# 10/22：归档、备份、发布状态与证书属于运行数据，不能进入模板仓库。
+var/
+backups/
+deploy/certs/
+deploy/prod.env
 
 # 小程序端构建产物
 miniprogram/miniprogram_npm/

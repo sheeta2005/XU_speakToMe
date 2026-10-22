@@ -15,6 +15,24 @@
     <description>启动模块：Spring Boot 主应用、application.yml、组件扫描入口（依赖全部业务模块）</description>
 
     <dependencies>
+        <!-- 10/22：数据库版本由 Flyway 管理；健康信息仅通过独立内部端口提供。 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 10/20：启动配置和演示环境隔离使用独立回归测试。 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

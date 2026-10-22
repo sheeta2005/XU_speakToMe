@@ -1,0 +1,110 @@
+# 10/22：独立单机生产模板，不与 demo Compose 叠加；数据库和 Redis 没有宿主映射端口。
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: speak_to_me
+      MYSQL_USER: speak_to_me
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请配置生产数据库密码}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请配置生产数据库管理员密码}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u$$MYSQL_USER $$MYSQL_DATABASE -e 'SELECT 1' > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?请配置生产 Redis 密码}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: *logging
+
+  app:
+    image: ${APP_IMAGE:?请指定已构建的固定版本镜像或摘要}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 40s
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_ADDRESS: 0.0.0.0
+      # 10/22：仅信任本模板 Nginx 的固定来源，不能启用无边界的代理头信任。
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES: '172\.30\.122\.10'
+      MYSQL_HOST: mysql
+      MYSQL_USER: speak_to_me
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请配置生产数据库密码}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?请配置生产 Redis 密码}
+      AES_KEY: ${AES_KEY:?请保留与数据配套的 AES_KEY}
+      WX_APPID: ${WX_APPID:?请配置自己的微信应用}
+      WX_SECRET: ${WX_SECRET:?请配置自己的微信密钥}
+      AUDIT_ARCHIVE_DIRECTORY: /app/archive
+    volumes:
+      - audit-archive:/app/archive
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:9001/actuator/health/readiness | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    logging: *logging
+
+  nginx:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${HTTP_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t && wget --no-check-certificate -q -O /dev/null https://127.0.0.1/api/v1/campuses"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+    networks:
+      default:
+        ipv4_address: 172.30.122.10
+
+volumes:
+  mysql-data:
+  redis-data:
+  audit-archive:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.122.0/24

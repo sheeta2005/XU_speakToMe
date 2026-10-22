@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.m2 chmod +x mvnw && ./mvnw -B package
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-RUN groupadd --system app && useradd --system --gid app app
+RUN groupadd --system app && useradd --system --gid app app && mkdir /app/archive && chown app:app /app/archive
 COPY --from=build --chown=app:app /workspace/speakToMe-app/target/speak-to-me.jar app.jar
 USER app
 EXPOSE 8080

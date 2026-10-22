@@ -6,12 +6,21 @@ server:
   port: 8080
   # 10/20：本机启动默认仅监听回环地址，容器通过环境变量覆盖。
   address: ${SERVER_ADDRESS:127.0.0.1}
+  # 10/22：请求结束后再停止，部署脚本同时提供容器退出宽限期。
+  shutdown: graceful
 
 spring:
   profiles:
     default: prod
   application:
     name: speak-to-me
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  flyway:
+    # 10/22：非空无历史库必须人工执行结构核验与基线接管，禁止自动跳过 V1。
+    baseline-on-migrate: false
+    clean-disabled: true
+    validate-on-migrate: true
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 10/20：空库初始化见 sql/init/01-schema.sql，库名 speak_to_me，字符集 utf8mb4。
@@ -81,3 +90,30 @@ business:
 logging:
   level:
     com.xiyou.speakToMe: info
+
+# 10/22：管理服务只监听容器/宿主回环地址，不经业务端口或 Nginx 暴露。
+management:
+  server:
+    port: 9001
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db,redis,diskSpace,auditArchive
+        liveness:
+          include: livenessState
+
+audit:
+  archive:
+    enabled: ${AUDIT_ARCHIVE_ENABLED:true}
+    directory: ${AUDIT_ARCHIVE_DIRECTORY:./var/audit-archive}
+    retention-days: ${AUDIT_RETENTION_DAYS:60}
+    batch-size: 500

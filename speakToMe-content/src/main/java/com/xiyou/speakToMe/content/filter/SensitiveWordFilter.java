@@ -22,6 +22,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization // 10/22：先迁移，再读取词库。
 public class SensitiveWordFilter {
 
     /** Trie 节点 */

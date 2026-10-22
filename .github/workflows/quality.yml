@@ -15,10 +15,23 @@ concurrency:
 
 jobs:
   backend:
-    name: 后端与真实 Redis
+    name: 后端与真实 MySQL、Redis
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
+      # 10/22：数据库由测试生成随机名称，验证迁移、结构核验与校验失败，不接触生产库。
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: isolated-ci-test-only
+          MYSQL_DATABASE: speak_to_me
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "MYSQL_PWD=isolated-ci-test-only mysql -uroot -e 'SELECT 1'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
       redis:
         image: redis:7-alpine
         ports:
@@ -30,6 +43,8 @@ jobs:
           --health-retries 10
     env:
       TEST_REDIS_PORT: '6379'
+      TEST_MYSQL_PORT: '3306'
+      TEST_MYSQL_PASSWORD: isolated-ci-test-only
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -79,6 +94,9 @@ jobs:
       - name: 执行真实 MySQL 与 Redis 业务流程
         shell: pwsh
         run: ./scripts/smoke-demo.ps1
+      - name: 数据归档、备份恢复与镜像回滚演练
+        shell: pwsh
+        run: ./scripts/smoke-ops.ps1 -Image speaktome-local:dev
       - name: 失败时输出服务日志
         if: failure()
         run: docker compose -p ci logs --no-color --tail=100

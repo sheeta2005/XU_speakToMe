@@ -2,3 +2,10 @@
 spring:
   application:
     name: speak-to-me-demo
+  flyway:
+    # 10/22：种子数据只在独立 demo 加载，生产迁移中没有校区或演示身份。
+    locations: classpath:db/migration,classpath:db/demo
+
+audit:
+  archive:
+    enabled: false

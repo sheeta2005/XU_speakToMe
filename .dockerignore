@@ -12,3 +12,7 @@ application-local.yml
 miniprogram
 tests
 project.config.json
+var
+backups
+deploy/certs
+deploy/prod.env

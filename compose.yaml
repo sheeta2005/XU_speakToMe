@@ -11,9 +11,9 @@ services:
       - "127.0.0.1:${MYSQL_HOST_PORT:-13306}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./sql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u$$MYSQL_USER $$MYSQL_DATABASE -e 'SELECT COUNT(*) FROM campus' > /dev/null"]
+      # 10/22：先等数据库可连接，建表由应用 Flyway 负责，不能等待尚未创建的业务表。
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u$$MYSQL_USER $$MYSQL_DATABASE -e 'SELECT 1' > /dev/null"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -34,6 +34,8 @@ services:
       retries: 20
   app:
     build: .
+    # 10/22：备份及部署脚本可指定已构建镜像，不在生产机隐式重新构建。
+    image: ${APP_IMAGE:-speaktome-local:dev}
     environment:
       SPRING_PROFILES_ACTIVE: ${APP_PROFILE:-demo}
       SERVER_ADDRESS: 0.0.0.0
@@ -47,6 +49,9 @@ services:
       AES_KEY: ${AES_KEY:?请先初始化 .env 中的 AES_KEY}
       WX_APPID: ${WX_APPID:-}
       WX_SECRET: ${WX_SECRET:-}
+      AUDIT_ARCHIVE_DIRECTORY: /app/archive
+    volumes:
+      - audit-archive:/app/archive
     ports:
       - "127.0.0.1:${APP_PORT:-8080}:8080"
     depends_on:
@@ -55,7 +60,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/api/v1/campuses | grep -q '\"code\":0'"]
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:9001/actuator/health/readiness | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -63,3 +68,4 @@ services:
 volumes:
   mysql-data:
   redis-data:
+  audit-archive:
